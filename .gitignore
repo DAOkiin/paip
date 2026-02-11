@@ -1,0 +1,17 @@
+# Python and IDE specific files
+__pycache__
+.idea
+.DS_Store
+.pytest_cache
+
+# Virtual environment
+venv*
+
+# Development
+tmp/
+repomix*
+new_prompt.md
+tree.txt
+
+# Environment variables
+.env*
