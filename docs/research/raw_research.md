@@ -2,31 +2,32 @@
 
 Цель: законспектировать “рыхлые” документы из `docs/research/raw/` и разложить их по будущим артефактам:
 
-- `01_vision.md`
-- `02_use_cases.md`
-- `03_domain_model.md`
-- `04_architecture.md`
-- `05_event_model.md`
-- `06_data_model.md`
-- `07_mvp_plan.md`
+- `vision artifact`
+- `use_cases artifact`
+- `domain_model artifact`
+- `architecture artifact`
+- `event_model artifact`
+- `data_model artifact`
+- `mvp_plan artifact`
 
 Ограничение: файлы `docs/0*.md` **не открывались** (по правилу).
+- Обновление: перечисления ниже — целевые артефакты проекта, а не существующие файлы в текущем репозитории.
 
 ---
 
 ## Рекомендуемый порядок углублённого чтения raw (чтобы быстрее собрать артефакты)
 
-1. `docs/research/raw/01_requirements.md` — видение + стартовый каталог кейсов.
-2. `docs/research/raw/exports/ChatGPT-Структура_парсинга_данных.md` — сквозная структура системы + сущности + таксономия use cases.
-3. `docs/research/raw/exports/ChatGPT-Проектирование_системы_парсинга.md` — SDLC-структура + DDL-first + event-driven crawling паттерны.
-4. `docs/research/raw/exports/ChatGPT-Категоризация_веб-страниц.md` — как хранить/получать `page_type` (оси классификации, сигналы).
-5. `docs/research/raw/exports/ChatGPT-Проектирование_системы_агентов.md` — границы MVP, компоненты, кандидаты стека, план на сегодня.
-6. `docs/research/raw/system_goals_and_arch.md` — A4-canvas (goal/scope/use cases/stack/plan/risks).
-7. `docs/research/raw/exports/ChatGPT-Сбор_use-кейсов_проекта.md` — шаблон “карточек” + приоритизация P0/P1/P2.
-8. `docs/research/raw/exports/ChatGPT-Natural_Language_интерфейс.md` — NL→DSL, versioned context, validation/guardrails.
-9. `docs/research/raw/exports/ChatGPT-Системные_требования_Temporal.md` — инфраструктурные/перфоманс-ограничения Temporal.
-10. `docs/research/raw/exports/ChatGPT-Исследование_решений_для_парсинга.md` — ландшафт инструментов + статьи/кейсы Temporal.
-11. `docs/research/raw/exports/ChatGPT-Второе_Исследование_решений_для_парсинга.md` — расширенное исследование + pain points + гайды Temporal/Agents.
+1. `docs/research/raw/exports/ChatGPT-Core_concepts_AJTBD.md` — фундаментальные идеи AJTBD для формулировки рабочих задач и результатов пользователей.
+2. `docs/research/raw/system_goals_and_arch.md` — A4-canvas (goal/scope/use cases/stack/plan/risks).
+3. `docs/research/raw/exports/ChatGPT-Natural_language_interface.md` — NL→DSL, versioned context, validation/guardrails.
+4. `docs/research/raw/exports/ChatGPT-Second_Research_of_parsing_solutions.md` — расширенное исследование + pain points + гайды Temporal/Agents.
+5. `docs/research/raw/exports/ChatGPT-Research_of_parsing_solutions.md` — ландшафт инструментов + статьи/кейсы Temporal.
+6. `docs/research/raw/exports/ChatGPT-Web_page_categorization.md` — как хранить/получать `page_type` (оси классификации, сигналы).
+7. `docs/research/raw/exports/ChatGPT-Agent_system_design.md` — границы MVP, компоненты, кандидаты стека, план на сегодня.
+8. `docs/research/raw/exports/ChatGPT-Designing_data_parsing_system.md` — SDLC-структура + DDL-first + event-driven crawling паттерны.
+9. `docs/research/raw/exports/ChatGPT-Collection_of_use-cases_for_project.md` — шаблон “карточек” + приоритизация P0/P1/P2.
+10. `docs/research/raw/exports/ChatGPT-System_requirements_Temporal.md` — инфраструктурные/перфоманс-ограничения Temporal.
+11. `docs/research/raw/exports/ChatGPT-Parsing_data_structure.md` — сквозная структура системы + сущности + таксономия use cases.
 
 ---
 
@@ -34,46 +35,43 @@
 
 |  # | Файл                                                                    | Суть (1–2 предложения)                                                                                                                                                                | Потенциальные артефакты                                                                                                                  |
 |---:|-------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-|  1 | `docs/research/raw/01_requirements.md`                                           | “Universal Data Ingestion & Synthesis Platform”: конструктор ingestion-пайплайнов (адаптеры + правила) + реестр use cases (monitoring/aggregation/knowledge/trends/syndication).      | `01_vision.md`, `02_use_cases.md`, `03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`, `07_mvp_plan.md` |
-|  2 | `docs/research/raw/system_goals_and_arch.md`                                     | Шаблон A4 Project Canvas: цель/метрики, MVP in/out, 5–9 use cases, “mental model” архитектуры и стек, план+риски.                                                                     | `01_vision.md`, `02_use_cases.md`, `04_architecture.md`, `07_mvp_plan.md`                                                                |
-|  3 | `docs/research/raw/exports/ChatGPT-Natural_Language_интерфейс.md`               | Идея NL-интерфейса для агентов: читаемый лог + формальный JSON/DSL, “поставка контекста” (схемы+код) с версионированием и валидацией.                                                 | `03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`                                                      |
-|  4 | `docs/research/raw/exports/ChatGPT-Второе_Исследование_решений_для_парсинга.md` | Обзор OSS-инструментов для пайплайнов + “pain points/вопросы” для выбора стека; далее — заметки про async-стек OpenAI (как claim) и подборка гайдов Temporal для агентских сценариев. | `04_architecture.md`, `05_event_model.md`, `07_mvp_plan.md`                                                                              |
-|  5 | `docs/research/raw/exports/ChatGPT-Исследование_решений_для_парсинга.md`        | Подбор OSS-компонентов (Scrapy/Pyspider/Airbyte/dlt/Temporal) + разбор статей/кейсов “Temporal для scraping/пайплайнов/агентов” на уровне компонентов.                                | `04_architecture.md`, `05_event_model.md`, `07_mvp_plan.md`                                                                              |
-|  6 | `docs/research/raw/exports/ChatGPT-Категоризация_веб-страниц.md`                 | Исследование “page type”: schema.org WebPage subtypes + main entity type + topic taxonomy; академические жанровые таксономии; сигналы в HTML (schema.org/OG).                         | `03_domain_model.md`, `06_data_model.md`, `04_architecture.md`                                                                           |
-|  7 | `docs/research/raw/exports/ChatGPT-Проектирование_системы_агентов.md`            | “Рабочий документ v0.1”: MVP границы, скелет use cases, компоненты event-driven pipeline, кандидаты стека, план/вопросы; затем — валидация vision и список близких OSS-решений.       | `01_vision.md`, `02_use_cases.md`, `04_architecture.md`, `06_data_model.md`, `07_mvp_plan.md`                                            |
-|  8 | `docs/research/raw/exports/ChatGPT-Проектирование_системы_парсинга.md`           | SDLC-структура артефактов + DDL-first подход (DDL как контракт, queries/fixtures/tests) + ресёрч event-driven crawling архитектур (frontier, politeness, URL state, topics).          | `03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`, `07_mvp_plan.md`                                    |
-|  9 | `docs/research/raw/exports/ChatGPT-Сбор_use-кейсов_проекта.md`                  | Шаблон “карточек” use cases + универсальный каталог сценариев по стадиям пайплайна + приоритизация P0/P1/P2.                                                                          | `02_use_cases.md`, `07_mvp_plan.md`                                                                                                      |
-| 10 | `docs/research/raw/exports/ChatGPT-Системные_требования_Temporal.md`             | Зависимости/ресурсы Temporal Server, bottlenecks, shards; ориентиры latency/throughput и как бенчмаркать; сравнение Temporal vs Dagster по “скорости оркестрации”.                    | `04_architecture.md`, `07_mvp_plan.md`                                                                                                   |
-| 11 | `docs/research/raw/exports/ChatGPT-Структура_парсинга_данных.md`                 | Короткая декомпозиция системы (мониторинг→нормализация→diff/dedup→rules→notifications) + расширения (поисковик событий, корпус эссе) + структурная таксономия use cases (10 блоков).  | `01_vision.md`, `02_use_cases.md`, `03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`                   |
+|  1 | `docs/research/raw/exports/ChatGPT-Core_concepts_AJTBD.md`                       | AJTBD для формулировки задач: core job + related jobs + outcome statements + forces of progress; ориентирован на измеримые результаты и контекст использования.      | `vision artifact`, `use_cases artifact`, `mvp_plan artifact` |
+|  2 | `docs/research/raw/system_goals_and_arch.md`                                     | Шаблон A4 Project Canvas: цель/метрики, MVP in/out, 5–9 use cases, “mental model” архитектуры и стек, план+риски.                                                                     | `vision artifact`, `use_cases artifact`, `architecture artifact`, `mvp_plan artifact`                                                                |
+|  3 | `docs/research/raw/exports/ChatGPT-Natural_language_interface.md`               | Идея NL-интерфейса для агентов: читаемый лог + формальный JSON/DSL, “поставка контекста” (схемы+код) с версионированием и валидацией.                                                 | `domain_model artifact`, `architecture artifact`, `event_model artifact`, `data_model artifact`                                                      |
+|  4 | `docs/research/raw/exports/ChatGPT-Second_Research_of_parsing_solutions.md`       | Обзор OSS-инструментов для пайплайнов + “pain points/вопросы” для выбора стека; далее — заметки про async-стек OpenAI (как claim) и подборка гайдов Temporal для агентских сценариев. | `architecture artifact`, `event_model artifact`, `mvp_plan artifact`                                                                              |
+|  5 | `docs/research/raw/exports/ChatGPT-Research_of_parsing_solutions.md`        | Подбор OSS-компонентов (Scrapy/Pyspider/Airbyte/dlt/Temporal) + разбор статей/кейсов “Temporal для scraping/пайплайнов/агентов” на уровне компонентов.                                | `architecture artifact`, `event_model artifact`, `mvp_plan artifact`                                                                              |
+|  6 | `docs/research/raw/exports/ChatGPT-Web_page_categorization.md`                 | Исследование “page type”: schema.org WebPage subtypes + main entity type + topic taxonomy; академические жанровые таксономии; сигналы в HTML (schema.org/OG).                         | `domain_model artifact`, `data_model artifact`, `architecture artifact`                                                                           |
+|  7 | `docs/research/raw/exports/ChatGPT-Agent_system_design.md`            | “Рабочий документ v0.1”: MVP границы, скелет use cases, компоненты event-driven pipeline, кандидаты стека, план/вопросы; затем — валидация vision и список близких OSS-решений.       | `vision artifact`, `use_cases artifact`, `architecture artifact`, `data_model artifact`, `mvp_plan artifact`                                            |
+|  8 | `docs/research/raw/exports/ChatGPT-Designing_data_parsing_system.md`           | SDLC-структура артефактов + DDL-first подход (DDL как контракт, queries/fixtures/tests) + ресёрч event-driven crawling архитектур (frontier, politeness, URL state, topics).          | `domain_model artifact`, `architecture artifact`, `event_model artifact`, `data_model artifact`, `mvp_plan artifact`                                    |
+|  9 | `docs/research/raw/exports/ChatGPT-Collection_of_use-cases_for_project.md`                  | Шаблон “карточек” use cases + универсальный каталог сценариев по стадиям пайплайна + приоритизация P0/P1/P2.                                                                          | `use_cases artifact`, `mvp_plan artifact`                                                                                                      |
+| 10 | `docs/research/raw/exports/ChatGPT-System_requirements_Temporal.md`             | Зависимости/ресурсы Temporal Server, bottlenecks, shards; ориентиры latency/throughput и как бенчмаркать; сравнение Temporal vs Dagster по “скорости оркестрации”.                    | `architecture artifact`, `mvp_plan artifact`                                                                                                   |
+| 11 | `docs/research/raw/exports/ChatGPT-Parsing_data_structure.md`                 | Короткая декомпозиция системы (мониторинг→нормализация→diff/dedup→rules→notifications) + расширения (поисковик событий, корпус эссе) + структурная таксономия use cases (10 блоков).  | `vision artifact`, `use_cases artifact`, `domain_model artifact`, `architecture artifact`, `event_model artifact`, `data_model artifact`                   |
 
 ---
 
-## 1) `docs/research/raw/01_requirements.md`
+## 1) `docs/research/raw/exports/ChatGPT-Core_concepts_AJTBD.md`
 
 ### Суть
 
-Видение “платформы-инжеста”: не один парсер, а конструктор пайплайнов. Источники подключаются адаптерами, обработка собирается из переиспользуемых “правил/инструментов”.
+Методология **Advanced Jobs To Be Done** для описания ценности продукта через прогресс пользователя: от текущего состояния к целевому. Подход задаёт язык для формализации use-cases и измерения результатов.
 
 ### Ключевые идеи
 
-- Event-driven платформа для сбора, нормализации, анализа и синдикации из Web/RSS/API/Social.
-- Пайплайн формирует пользователь (человек/агент) под кейс.
-- “Правила” = инструменты (extraction, NER, категоризация, дедупликация, …).
-- Цель — из потока данных получить структурированные знания/инсайты/контент.
-
-Use cases (сгруппированы):
-
-- Monitoring/alerting: скидки, GitHub search → триггеры → уведомления.
-- Aggregation/indexing: агрегатор событий → нормализация + entity resolution → единая витрина/API.
-- Knowledge corpus: философские эссе → классификация + NER → граф знаний.
-- Narrative tracking: крипто-нарративы → кластеризация/частоты/тональность → отчёты.
-- Syndication: генерация статей/сценариев на базе собранных фактов.
+- **Core job + timeline**: задавать работу как этапы “Define → Locate → Prepare → Confirm → Execute → Monitor → Modify → Conclude”.
+- **Outcome statements**: формулировать прогресс через измеримые изменения (уменьшение времени/усилий/ошибок, рост точности/предсказуемости).
+- **Forces of progress**: push, pull, anxiety, habit как база для приоритизации функций.
+- **Сегментация по неудовлетворённым outcome** вместо только ролей/персон.
 
 ### Потенциальные артефакты
 
-`01_vision.md`, `02_use_cases.md`, `03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`, `07_mvp_plan.md`.
+`vision artifact`, `use_cases artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
+
+- **Работа как прогресс в ситуации**, а не как «человеческая задача»: лучше измерять результат системы по степени достижения исходной цели пользователя.
+- **Ядро/сопутствующие/эмоциональные jobs**: покрывать не только функцию, но и доверие/удобство/социальный контекст.
+- **Switch moments**: точки, где пользователь переходит от «смотреть» к «действовать»; критичные для retention и UX.
+- **Приоритет по неудовлетворённым outcome**: строить план спринтов не по удобству разработки, а по силе неудовлетворённого прогресса.
 
 - **Платформенная формула:** *adapters* + *pipelines* + *rules/tools*.
 - **Триггерная модель:** “порог/условие” → уведомление.
@@ -99,7 +97,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`01_vision.md`, `02_use_cases.md`, `04_architecture.md`, `07_mvp_plan.md`.
+`vision artifact`, `use_cases artifact`, `architecture artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -109,7 +107,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 3) `docs/research/raw/exports/ChatGPT-Natural_Language_интерфейс.md`
+## 3) `docs/research/raw/exports/ChatGPT-Natural_language_interface.md`
 
 ### Суть
 
@@ -129,7 +127,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`.
+`domain_model artifact`, `architecture artifact`, `event_model artifact`, `data_model artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -141,7 +139,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 4) `docs/research/raw/exports/ChatGPT-Второе_Исследование_решений_для_парсинга.md`
+## 4) `docs/research/raw/exports/ChatGPT-Second_Research_of_parsing_solutions.md`
 
 ### Суть
 
@@ -168,7 +166,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`04_architecture.md`, `05_event_model.md`, `07_mvp_plan.md`.
+`architecture artifact`, `event_model artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -182,7 +180,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 5) `docs/research/raw/exports/ChatGPT-Исследование_решений_для_парсинга.md`
+## 5) `docs/research/raw/exports/ChatGPT-Research_of_parsing_solutions.md`
 
 ### Суть
 
@@ -202,7 +200,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`04_architecture.md`, `05_event_model.md`, `07_mvp_plan.md`.
+`architecture artifact`, `event_model artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -213,7 +211,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 6) `docs/research/raw/exports/ChatGPT-Категоризация_веб-страниц.md`
+## 6) `docs/research/raw/exports/ChatGPT-Web_page_categorization.md`
 
 ### Суть
 
@@ -234,7 +232,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`03_domain_model.md`, `06_data_model.md`, `04_architecture.md`.
+`domain_model artifact`, `data_model artifact`, `architecture artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -244,7 +242,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 7) `docs/research/raw/exports/ChatGPT-Проектирование_системы_агентов.md`
+## 7) `docs/research/raw/exports/ChatGPT-Agent_system_design.md`
 
 ### Суть
 
@@ -260,7 +258,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`01_vision.md`, `02_use_cases.md`, `04_architecture.md`, `06_data_model.md`, `07_mvp_plan.md`.
+`vision artifact`, `use_cases artifact`, `architecture artifact`, `data_model artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -271,7 +269,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 8) `docs/research/raw/exports/ChatGPT-Проектирование_системы_парсинга.md`
+## 8) `docs/research/raw/exports/ChatGPT-Designing_data_parsing_system.md`
 
 ### Суть
 
@@ -293,7 +291,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`, `07_mvp_plan.md`.
+`domain_model artifact`, `architecture artifact`, `event_model artifact`, `data_model artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -306,7 +304,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 9) `docs/research/raw/exports/ChatGPT-Сбор_use-кейсов_проекта.md`
+## 9) `docs/research/raw/exports/ChatGPT-Collection_of_use-cases_for_project.md`
 
 ### Суть
 
@@ -320,7 +318,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`02_use_cases.md`, `07_mvp_plan.md`.
+`use_cases artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -330,7 +328,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 10) `docs/research/raw/exports/ChatGPT-Системные_требования_Temporal.md`
+## 10) `docs/research/raw/exports/ChatGPT-System_requirements_Temporal.md`
 
 ### Суть
 
@@ -348,7 +346,7 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`04_architecture.md`, `07_mvp_plan.md`.
+`architecture artifact`, `mvp_plan artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
@@ -358,7 +356,7 @@ Use cases (сгруппированы):
 
 ---
 
-## 11) `docs/research/raw/exports/ChatGPT-Структура_парсинга_данных.md`
+## 11) `docs/research/raw/exports/ChatGPT-Parsing_data_structure.md`
 
 ### Суть
 
@@ -381,12 +379,11 @@ Use cases (сгруппированы):
 
 ### Потенциальные артефакты
 
-`01_vision.md`, `02_use_cases.md`, `03_domain_model.md`, `04_architecture.md`, `05_event_model.md`, `06_data_model.md`.
+`vision artifact`, `use_cases artifact`, `domain_model artifact`, `architecture artifact`, `event_model artifact`, `data_model artifact`.
 
 ### Концепты и потенциальные идеи (блоки для переноса)
 
 - **Product modes:** Monitoring vs Index/Search vs Synthesis.
 - **Canonical vs Source representation:** “каноническая сущность” и “как в источнике” (для трассировки и обновлений).
-- **Use case taxonomy** как основа структуры `02_use_cases.md`.
+- **Use case taxonomy** как основа структуры `use_cases artifact`.
 - **Формула пайплайна:** “сбор → нормализация → дедуп → семантика → динамика → инсайты → синдикация”.
-
