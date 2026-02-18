@@ -1,10 +1,19 @@
-# Universal Data Ingestion & Synthesis Platform
+# PAIP
 
-Repository contains docs and initial documentation skeleton for a platform that turns raw information streams into reliable, user-oriented knowledge flows.
+Коротко: система мониторинга/агрегации изменений из источников (web, репозитории, цены, события) с дедупликацией, историей и уведомлениями.
 
-See `docs/README.md` for the current documentation structure and entry points:
+## Быстрый старт (dev)
+TODO: команды запуска, зависимости, env.
 
-- `docs/product/global_vision.md`
-- `docs/product/global_user_stories.md`
-- `docs/product/global_use_cases.md`
-- `docs/iterations/current.md`
+## Документация (источник истины)
+- SDLC: SDLC.md (подробно: docs/_meta/sdlc.md)
+- Vision: docs/product/global_vision.md
+- User Stories: docs/product/global_user_stories.md
+- Use Cases: docs/product/global_use_cases.md
+- Current iteration: docs/iterations/<CURRENT>/
+- ADR: docs/adr/
+
+Если структура без `docs/`, см. фактические папки в репозитории.
+
+## Как работать через агентов (Codex)
+Смотри AGENTS.md.
