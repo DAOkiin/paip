@@ -37,6 +37,9 @@ logs MONITOR_ID='1' LIMIT='20':
 stats MONITOR_ID='1' LIMIT='10':
   PAIP_DB_PATH="${PAIP_DB_PATH:-./tmp/paip.db}" {{venv_python}} -m paip.debug --monitor-id "{{MONITOR_ID}}" --limit "{{LIMIT}}"
 
+telegram-preview MONITOR_ID='1' LIMIT='10' RUN_ID='':
+  PAIP_DB_PATH="${PAIP_DB_PATH:-./tmp/paip.db}" {{venv_python}} -m paip.debug --monitor-id "{{MONITOR_ID}}" --limit "{{LIMIT}}" --telegram-preview {{ if RUN_ID != "" { "--run-id " + RUN_ID } else { "" } }}
+
 env-example:
   @printf '%s\n' \
     'Required:' \
