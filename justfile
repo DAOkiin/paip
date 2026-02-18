@@ -31,6 +31,12 @@ run-scheduler:
 history MONITOR_ID LIMIT='20':
   {{venv_paip}} history --monitor-id "{{MONITOR_ID}}" --limit "{{LIMIT}}"
 
+logs MONITOR_ID='1' LIMIT='20':
+  {{venv_paip}} history --monitor-id "{{MONITOR_ID}}" --limit "{{LIMIT}}"
+
+stats MONITOR_ID='1' LIMIT='10':
+  PAIP_DB_PATH="${PAIP_DB_PATH:-./tmp/paip.db}" {{venv_python}} -m paip.debug --monitor-id "{{MONITOR_ID}}" --limit "{{LIMIT}}"
+
 env-example:
   @printf '%s\n' \
     'Required:' \

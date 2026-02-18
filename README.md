@@ -49,6 +49,8 @@ just monitor-add "Bangkok events" "Bangkok" "tech" "events" 30 "<telegram-chat-i
 just monitor-list
 just run-once 1
 just history 1 20
+just logs 1 20
+just stats 1 10
 ```
 
 Подсказка по env:
