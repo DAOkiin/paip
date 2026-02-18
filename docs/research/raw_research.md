@@ -1,21 +1,6 @@
 # Raw research (`docs/research/raw/**`)
 
-Цель: законспектировать “рыхлые” документы из `docs/research/raw/` и разложить их по будущим артефактам:
-
-- `vision artifact`
-- `use_cases artifact`
-- `domain_model artifact`
-- `architecture artifact`
-- `event_model artifact`
-- `data_model artifact`
-- `mvp_plan artifact`
-
-Ограничение: файлы `docs/0*.md` **не открывались** (по правилу).
-- Обновление: перечисления ниже — целевые артефакты проекта, а не существующие файлы в текущем репозитории.
-
----
-
-## Рекомендуемый порядок углублённого чтения raw (чтобы быстрее собрать артефакты)
+## Структура и контекст
 
 1. `docs/research/raw/exports/ChatGPT-Core_concepts_AJTBD.md` — фундаментальные идеи AJTBD для формулировки рабочих задач и результатов пользователей.
 2. `docs/research/raw/system_goals_and_arch.md` — A4-canvas (goal/scope/use cases/stack/plan/risks).
