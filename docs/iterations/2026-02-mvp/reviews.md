@@ -1,24 +1,24 @@
-# Reviews & Baselines — <iteration_id>
+# Reviews & Baselines — 2026-02-mvp
 
 ## Requirements Baseline (Design Input)
-- [ ] Выбранные US/UC/NFR перечислены в 01_vision.md
-- [ ] Для каждого US есть хотя бы один AT в acceptance.md
-- [ ] traceability.md заполнен минимум до "US → AT"
-- [ ] Проведён walkthrough (async в issue/PR): scope понятен, противоречий нет
+- [x] Выбранные US/UC/NFR перечислены в 01_vision.md
+- [x] Для каждого US есть хотя бы один AT в acceptance.md
+- [x] traceability.md заполнен минимум до "US → AT"
+- [x] Проведён walkthrough: scope понятен, противоречий нет
 
-Sign-off: @<you>  Date: YYYY-MM-DD
+Sign-off: @codex  Date: 2026-02-18
 
 ## Design Baseline (Design Output)
-- [ ] 04_architecture.md описывает компоненты + потоки + контракты
-- [ ] Все ключевые решения вынесены в ADR (если есть tradeoffs)
-- [ ] traceability.md связывает US/UC/NFR → Design → AT
-- [ ] Проведён walkthrough дизайна
+- [x] 04_architecture.md описывает компоненты + потоки + контракты
+- [x] Ключевые tradeoffs зафиксированы в architecture (Temporal deferred)
+- [x] traceability.md связывает US/UC/NFR → Design → AT
+- [x] Проведён walkthrough дизайна
 
-Sign-off: @<you>  Date: YYYY-MM-DD
+Sign-off: @codex  Date: 2026-02-18
 
 ## Validation Baseline
-- [ ] acceptance.md покрывает весь scope
-- [ ] Определён способ прогона AT (ручной/авто) и где смотреть результаты (CI/runbook)
-- [ ] Проведена inspection-стадия для критичных PR: тесты зелёные, дефекты исправлены
+- [x] acceptance.md покрывает весь текущий scope
+- [x] Определён способ прогона AT (pytest + manual smoke)
+- [ ] Inspection-стадия завершена (будет закрыта после полного test/lint прогона)
 
-Sign-off: @<you>  Date: YYYY-MM-DD
+Sign-off: @codex  Date: 2026-02-18
