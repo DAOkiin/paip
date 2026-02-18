@@ -14,6 +14,12 @@ source .venv/bin/activate
 pip install -e .[dev]
 ```
 
+Альтернатива через `just`:
+
+```bash
+just setup
+```
+
 Env:
 
 ```bash
@@ -23,6 +29,32 @@ export TELEGRAM_BOT_TOKEN="<telegram-bot-token>"
 export PAIP_DB_PATH="./tmp/paip.db"
 export PAIP_LOG_LEVEL="INFO"
 export SEARXNG_API_KEY=""
+```
+
+Переменные берутся из shell; если рядом есть `.env`, `just` также подгрузит его автоматически (`set dotenv-load := true`).
+
+## Justfile workflow
+
+Список доступных recipes:
+
+```bash
+just
+```
+
+Ключевые команды:
+
+```bash
+just test
+just monitor-add "Bangkok events" "Bangkok" "tech" "events" 30 "<telegram-chat-id>"
+just monitor-list
+just run-once 1
+just history 1 20
+```
+
+Подсказка по env:
+
+```bash
+just env-example
 ```
 
 Создать монитор:

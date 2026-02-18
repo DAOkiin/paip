@@ -20,6 +20,7 @@ MonitorSpec (CLI)
 - Оркестрация: `APScheduler` на этом этапе; Temporal запланирован позже.
 - Source adapter: SearXNG JSON API (`SEARXNG_BASE_URL`).
 - Уведомления: Telegram bot token (`TELEGRAM_BOT_TOKEN`), fallback в stdout.
+- Локальный command runner: `justfile` (MVP dev workflow).
 
 ## Публичные контракты
 

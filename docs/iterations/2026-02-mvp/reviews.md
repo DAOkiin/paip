@@ -19,6 +19,6 @@ Sign-off: @codex  Date: 2026-02-18
 ## Validation Baseline
 - [x] acceptance.md покрывает весь текущий scope
 - [x] Определён способ прогона AT (pytest + manual smoke)
-- [ ] Inspection-стадия завершена (будет закрыта после полного test/lint прогона)
+- [x] Inspection-стадия завершена: `just test` green
 
 Sign-off: @codex  Date: 2026-02-18
