@@ -1,14 +1,27 @@
 # Python and IDE specific files
-__pycache__
-.idea
+__pycache__/
+*.py[cod]
+.idea/
 .DS_Store
-.pytest_cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build and packaging artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
 
 # Virtual environment
-venv*
+.venv/
+venv*/
 
-# Development
+# Runtime and development outputs
 tmp/
+*.db
+*.sqlite3
+*.log
 repomix*
 new_prompt.md
 tree.txt
