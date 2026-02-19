@@ -69,6 +69,7 @@ paip history --monitor-id 1 --limit 20
 ```bash
 just test
 just readme-links-check
+just just-docs-check
 ```
 
 ## Документация
@@ -87,3 +88,5 @@ just readme-links-check
 - PR notes map:
   - Process guide: `docs/_meta/PR-NOTES.md`
   - Registry index: `docs/_meta/pr-notes/index.md`
+- Just commands map:
+  - Recipe reference (input/output): `docs/_meta/JUST-COMMANDS.md`

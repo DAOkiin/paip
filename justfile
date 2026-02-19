@@ -47,6 +47,9 @@ notes-registry-lint:
 readme-links-check FILE='README.md':
   {{venv_python}} scripts/check_readme_links.py --root . --file "{{FILE}}"
 
+just-docs-check FILE='docs/_meta/JUST-COMMANDS.md':
+  {{venv_python}} scripts/check_just_docs.py --justfile justfile --docs "{{FILE}}"
+
 monitor-add TITLE CITY TOPIC QUERY INTERVAL_MIN CHAT_ID:
   {{venv_paip}} monitor add --title "{{TITLE}}" --city "{{CITY}}" --topic "{{TOPIC}}" --query "{{QUERY}}" --interval-min "{{INTERVAL_MIN}}" --chat-id "{{CHAT_ID}}"
 
