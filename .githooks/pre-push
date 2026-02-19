@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${PAIP_SKIP_NOTES_PUSH:-}" == "1" ]]; then
+  exit 0
+fi
+
+remote_name="${1:-origin}"
+notes_ref="refs/notes/commits"
+
+if ! git show-ref --verify --quiet "$notes_ref"; then
+  exit 0
+fi
+
+echo "[pre-push] syncing $notes_ref to $remote_name"
+if ! git push --no-verify "$remote_name" "$notes_ref:$notes_ref"; then
+  echo "[pre-push] ERROR: failed to push $notes_ref to $remote_name" >&2
+  echo "[pre-push] Run manually: git push $remote_name $notes_ref:$notes_ref" >&2
+  echo "[pre-push] Set PAIP_SKIP_NOTES_PUSH=1 only for emergency bypass." >&2
+  exit 1
+fi

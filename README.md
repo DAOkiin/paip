@@ -83,3 +83,6 @@ just test
   - Standard (source of truth): `docs/_meta/QC-STANDARD.md`
   - Steward skill: `skills/query-catalog-steward.md`
   - Registry entrypoint: `query-catalog/README.md`
+- PR notes map:
+  - Process guide: `docs/_meta/PR-NOTES.md`
+  - Registry index: `docs/_meta/pr-notes/index.md`

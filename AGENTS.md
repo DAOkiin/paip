@@ -10,6 +10,7 @@ Codex читает этот файл перед началом работы. Ц�
 5) SDLC: SDLC.md
 6) Query Catalog standard: docs/_meta/QC-STANDARD.md
 7) Query Catalog steward skill: skills/query-catalog-steward.md
+8) PR notes process and registry: docs/_meta/PR-NOTES.md, docs/_meta/pr-notes/index.md
 
 Если файлы лежат не в `docs/`, используй путь из README.md.
 

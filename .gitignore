@@ -28,3 +28,6 @@ tree.txt
 
 # Environment variables
 .env*
+
+# Optional local git notes editing scratch files
+.notes*

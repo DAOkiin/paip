@@ -25,6 +25,25 @@ qc-validate:
 qc-validate-ci:
   bash scripts/qc_validate_ci.sh
 
+hooks-install:
+  git config core.hooksPath .githooks
+  chmod +x .githooks/pre-push
+
+notes-list:
+  git notes --ref refs/notes/commits list
+
+notes-show SHA:
+  git notes --ref refs/notes/commits show "{{SHA}}"
+
+notes-push REMOTE='origin':
+  git push "{{REMOTE}}" refs/notes/commits:refs/notes/commits
+
+notes-registry-refresh:
+  {{venv_python}} scripts/pr_notes_registry.py sync --output-dir docs/_meta/pr-notes --notes-ref refs/notes/commits
+
+notes-registry-lint:
+  {{venv_python}} scripts/pr_notes_registry.py lint --output-dir docs/_meta/pr-notes --notes-ref refs/notes/commits
+
 monitor-add TITLE CITY TOPIC QUERY INTERVAL_MIN CHAT_ID:
   {{venv_paip}} monitor add --title "{{TITLE}}" --city "{{CITY}}" --topic "{{TOPIC}}" --query "{{QUERY}}" --interval-min "{{INTERVAL_MIN}}" --chat-id "{{CHAT_ID}}"
 
