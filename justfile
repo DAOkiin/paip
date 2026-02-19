@@ -2,7 +2,7 @@ set shell := ["bash", "-cu"]
 set dotenv-load := true
 
 venv_python := ".venv/bin/python"
-venv_pip := ".venv/bin/pip"
+venv_pip := ".venv/bin/python -m pip"
 venv_pytest := ".venv/bin/pytest"
 venv_paip := ".venv/bin/paip"
 
@@ -15,6 +15,15 @@ setup:
 
 test:
   {{venv_pytest}} -q
+
+qc-setup:
+  {{venv_pip}} install -r query-catalog/requirements-qc.txt
+
+qc-validate:
+  {{venv_python}} scripts/qc_validate.py --root . --policy query-catalog/policy.template.yaml
+
+qc-validate-ci:
+  bash scripts/qc_validate_ci.sh
 
 monitor-add TITLE CITY TOPIC QUERY INTERVAL_MIN CHAT_ID:
   {{venv_paip}} monitor add --title "{{TITLE}}" --city "{{CITY}}" --topic "{{TOPIC}}" --query "{{QUERY}}" --interval-min "{{INTERVAL_MIN}}" --chat-id "{{CHAT_ID}}"

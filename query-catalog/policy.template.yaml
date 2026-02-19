@@ -1,0 +1,34 @@
+# query-catalog/policy.yaml
+# Service-level policy knobs for qc_validate.py.
+# Adjust to match your environment and maturity.
+
+# Severity controls: off|warn|error
+require_links: warn
+require_ordering_for_lists: warn
+tenant_unknown_is: warn
+
+missing_security_is: error
+missing_observability_is: error
+
+# Semantic rules
+require_pagination_for_lists: true
+allow_unbounded_requires_reason: true
+
+# Optional allow-list (set to null to disable)
+allowed_sources:
+  - sqlite.main
+
+# Used only for --check-usage (best-effort string scan)
+code_roots:
+  - src
+  - app
+  - services
+
+exclude_dirs:
+  - node_modules
+  - .git
+  - dist
+  - build
+  - .venv
+  - venv
+  - __pycache__

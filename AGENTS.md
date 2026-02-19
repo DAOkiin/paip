@@ -8,6 +8,8 @@ Codex читает этот файл перед началом работы. Ц�
 3) Глоссарий: docs/product/glossary.md
 4) Текущая итерация: docs/iterations/<CURRENT>/ (01_vision.md, 04_architecture.md, acceptance.md, traceability.md, reviews.md)
 5) SDLC: SDLC.md
+6) Query Catalog standard: docs/_meta/QC-STANDARD.md
+7) Query Catalog steward skill: skills/query-catalog-steward.md
 
 Если файлы лежат не в `docs/`, используй путь из README.md.
 

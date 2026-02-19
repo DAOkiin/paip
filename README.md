@@ -72,9 +72,14 @@ just test
 
 ## Документация
 
-- `/Users/daokiin/projects/daokiin/paip/SDLC.md`
-- `/Users/daokiin/projects/daokiin/paip/docs/product/global_vision.md`
-- `/Users/daokiin/projects/daokiin/paip/docs/product/global_user_stories.md`
-- `/Users/daokiin/projects/daokiin/paip/docs/product/global_use_cases.md`
-- `/Users/daokiin/projects/daokiin/paip/docs/product/nfr.md`
-- `/Users/daokiin/projects/daokiin/paip/docs/iterations/2026-02-mvp/`
+- SDLC entrypoint: `SDLC.md`
+- Product requirements:
+  - `docs/product/global_vision.md`
+  - `docs/product/global_user_stories.md`
+  - `docs/product/global_use_cases.md`
+  - `docs/product/nfr.md`
+- Current iteration pack: `docs/iterations/2026-02-mvp/`
+- Query Catalog map:
+  - Standard (source of truth): `docs/_meta/QC-STANDARD.md`
+  - Steward skill: `skills/query-catalog-steward.md`
+  - Registry entrypoint: `query-catalog/README.md`
