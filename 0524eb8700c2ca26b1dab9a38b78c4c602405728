@@ -1,0 +1,45 @@
+## Motivation
+Нужен рабочий Query Catalog, чтобы зафиксировать текущие DB-операции проекта в машиночитаемом виде, обеспечить трассируемость `use_case -> query_id -> data_objects` и добавить проверяемый QC validation gate без изменения runtime-логики.
+
+## What changed
+- Добавлен и подключён набор QC-артефактов: standard, schema, policy template, validator, CI script, steward skill, map-first README.
+- Заполнен Query Registry в `query-catalog/query-catalog.yaml` (24 Query IDs: runtime + debug).
+- Обновлены map-first entrypoints в `README.md` и `AGENTS.md`.
+- В `policy.template.yaml` установлен текущий источник данных `sqlite.main`.
+- В `justfile` добавлены `qc-setup`, `qc-validate`, `qc-validate-ci` и использование `python -m pip`.
+
+## How to run
+```bash
+just qc-setup
+just qc-validate
+.venv/bin/python scripts/qc_validate.py --root . --policy query-catalog/policy.template.yaml --check-call-sites
+bash scripts/qc_validate_ci.sh
+just test
+```
+
+## CI impact
+- Добавлен стабильный QC validation path через `scripts/qc_validate_ci.sh`.
+- Новых прод-зависимостей нет.
+- QC-зависимости локализованы в `query-catalog/requirements-qc.txt`.
+- Существующие тестовые пайплайны не изменены.
+
+## Summary
+- Query Catalog интегрирован и валидируется локально/CI.
+- Registry покрывает все текущие runtime + debug DB-запросы.
+- Изменения минимально инвазивны, runtime поведение не менялось.
+- PR-дифф изолирован относительно `codex/us001-searxng-slice`.
+
+## Evidence
+- `just qc-validate` — passed (warnings only, no errors).
+- `qc_validate.py --check-call-sites` — passed (warnings only).
+- `bash scripts/qc_validate_ci.sh` — passed (warnings only).
+- `just test` — `13 passed`.
+
+## Risks
+- Пока нет runtime-emitted `query_id` в логах SQL/ORM.
+- Для unbounded list-запросов остаются ожидаемые предупреждения `QC-07`.
+
+## Follow-ups
+- Внедрить runtime tagging `query_id` в коде запросов для глубокой observability-корреляции.
+- При добавлении новых data sources синхронно обновлять policy + registry.
+- После внедрения query_id в код включить stricter режимы (`--strict`, `--check-usage`).
