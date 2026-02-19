@@ -1,0 +1,1364 @@
+queries:
+  - id: Schema.EnsureVersion
+    owner: team-paip
+    purpose: >
+      Ensures SQLite schema is present and aligned with the runtime schema version.
+      On version mismatch, resets known tables and recreates the current schema.
+    source: sqlite.main
+    contract:
+      params: []
+      returns:
+        cardinality: "0..1"
+        shape: SchemaEnsureResult
+      ordering: null
+      pagination: null
+      errors:
+        - schema_reset_failed
+        - sqlite_error
+    data_objects:
+      read:
+        - sqlite_pragma.user_version
+      write:
+        - monitors
+        - runs
+        - source_hits
+        - event_claims
+        - events
+        - notifications
+        - canonical_items
+        - raw_hits
+    consistency:
+      transaction: required
+      idempotent: conditional
+      idempotency_notes: >
+        Idempotent when schema version is already current. Performs destructive reset on
+        version mismatch by design of MVP migration strategy.
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:store
+      notes: Internal bootstrap path only.
+    performance:
+      hot_path: false
+      notes: Invoked during store initialization.
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.schema.ensure.duration_ms
+    links:
+      use_cases:
+        - NFR-002
+      call_sites:
+        - src/paip/db.py
+      docs:
+        - docs/iterations/2026-02-mvp/04_architecture.md
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Monitor.Create
+    owner: team-paip
+    purpose: >
+      Creates a monitor configuration that defines city, topic, search query,
+      execution interval, and target Telegram chat.
+    source: sqlite.main
+    contract:
+      params:
+        - name: title
+          type: string
+          required: true
+        - name: city
+          type: string
+          required: true
+        - name: topic
+          type: string
+          required: true
+        - name: query
+          type: string
+          required: true
+        - name: interval_min
+          type: integer
+          required: true
+        - name: tg_chat_id
+          type: string
+          required: true
+        - name: enabled
+          type: boolean
+          required: true
+      returns:
+        cardinality: "1"
+        shape: MonitorSpec
+      ordering: null
+      pagination: null
+      errors:
+        - validation_failed
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - monitors
+    consistency:
+      transaction: required
+      idempotent: "false"
+      idempotency_notes: Creates a new monitor row on each successful call.
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.monitor.create.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-001
+        - NFR-006
+      call_sites:
+        - src/paip/cli.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Monitor.List
+    owner: team-paip
+    purpose: >
+      Lists monitors for operator workflows and scheduler registration.
+      Can optionally filter to enabled monitors only.
+    source: sqlite.main
+    contract:
+      params:
+        - name: enabled_only
+          type: boolean
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: MonitorSpec[]
+      ordering:
+        by: id
+        direction: asc
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - monitors
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:cli_and_scheduler
+    performance:
+      hot_path: false
+      allow_unbounded: true
+      allow_unbounded_reason: >
+        Current monitor volume is expected to stay small in MVP and full list is
+        required for scheduler job registration.
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.monitor.list.duration_ms
+        - db.monitor.list.rows
+    links:
+      use_cases:
+        - UC-001
+        - NFR-006
+      call_sites:
+        - src/paip/cli.py
+        - src/paip/scheduler.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Monitor.GetById
+    owner: team-paip
+    purpose: >
+      Loads a single monitor definition by identifier before pipeline execution.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..1"
+        shape: MonitorSpec
+      ordering: null
+      pagination: null
+      errors:
+        - not_found
+        - sqlite_error
+    data_objects:
+      read:
+        - monitors
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.monitor.get_by_id.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-001
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Run.Start
+    owner: team-paip
+    purpose: >
+      Creates a run record at pipeline start to track execution trigger and
+      aggregate counters for the monitor run.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: trigger
+          type: string
+          required: true
+      returns:
+        cardinality: "1"
+        shape: run_id
+      ordering: null
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - runs
+    consistency:
+      transaction: required
+      idempotent: "false"
+      idempotency_notes: A new run row is always created.
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.run.start.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-001
+        - NFR-001
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Run.Finish
+    owner: team-paip
+    purpose: >
+      Finalizes an existing run row with completion status, counters,
+      finish timestamp, and optional error details.
+    source: sqlite.main
+    contract:
+      params:
+        - name: run_id
+          type: integer
+          required: true
+        - name: status
+          type: string
+          required: true
+        - name: fetched_sources
+          type: integer
+          required: true
+        - name: claims_extracted
+          type: integer
+          required: true
+        - name: new_events
+          type: integer
+          required: true
+        - name: updated_events
+          type: integer
+          required: true
+        - name: duplicates
+          type: integer
+          required: true
+        - name: unsupported_sources
+          type: integer
+          required: true
+        - name: error
+          type: string|null
+          required: true
+      returns:
+        cardinality: "0..1"
+        shape: RunRow
+      ordering: null
+      pagination: null
+      errors:
+        - not_found
+        - sqlite_error
+    data_objects:
+      read:
+        - runs
+      write:
+        - runs
+    consistency:
+      transaction: required
+      idempotent: conditional
+      idempotency_notes: >
+        Repeating with identical values is effectively no-op; differing values overwrite
+        aggregate counters of the same run row.
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.run.finish.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-001
+        - NFR-001
+        - NFR-002
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: SourceHit.Create
+    owner: team-paip
+    purpose: >
+      Persists discovered source hits for a run before extraction to keep
+      provenance and auditability of fetched URLs.
+    source: sqlite.main
+    contract:
+      params:
+        - name: run_id
+          type: integer
+          required: true
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: url
+          type: string
+          required: true
+        - name: title
+          type: string
+          required: true
+        - name: snippet
+          type: string
+          required: true
+        - name: published_at
+          type: datetime|null
+          required: true
+        - name: source
+          type: string
+          required: true
+        - name: payload
+          type: json
+          required: true
+      returns:
+        cardinality: "1"
+        shape: source_hit_id
+      ordering: null
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - source_hits
+    consistency:
+      transaction: required
+      idempotent: "false"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.source_hit.create.duration_ms
+    links:
+      use_cases:
+        - UC-001
+        - NFR-001
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: EventClaim.Create
+    owner: team-paip
+    purpose: >
+      Stores validated event claims extracted from source hits for later
+      resolution and audit trail.
+    source: sqlite.main
+    contract:
+      params:
+        - name: claim
+          type: EventClaim
+          required: true
+        - name: validation_status
+          type: string
+          required: true
+      returns:
+        cardinality: "1"
+        shape: event_claim_id
+      ordering: null
+      pagination: null
+      errors:
+        - validation_failed
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - event_claims
+    consistency:
+      transaction: required
+      idempotent: "false"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event_claim.create.duration_ms
+    links:
+      use_cases:
+        - UC-002
+        - NFR-001
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: EventClaim.CreateInvalid
+    owner: team-paip
+    purpose: >
+      Stores invalid extracted claims together with validation errors to preserve
+      explainability and troubleshooting context.
+    source: sqlite.main
+    contract:
+      params:
+        - name: run_id
+          type: integer
+          required: true
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: source_hit_id
+          type: integer|null
+          required: true
+        - name: payload
+          type: json
+          required: true
+        - name: error
+          type: string
+          required: true
+      returns:
+        cardinality: "1"
+        shape: event_claim_id
+      ordering: null
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - event_claims
+    consistency:
+      transaction: required
+      idempotent: "false"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event_claim.create_invalid.duration_ms
+    links:
+      use_cases:
+        - UC-002
+        - NFR-001
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Event.GetByKey
+    owner: team-paip
+    purpose: >
+      Fetches an existing event by monitor and normalized event key to detect
+      duplicates and update candidates.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: event_key
+          type: string
+          required: true
+      returns:
+        cardinality: "0..1"
+        shape: Event
+      ordering: null
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - events
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event.get_by_key.duration_ms
+    links:
+      use_cases:
+        - UC-003
+        - NFR-002
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Event.GetLatestBySourceUrl
+    owner: team-paip
+    purpose: >
+      Retrieves the latest event row for the same source URL to detect updates
+      when the event key changes between runs.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: source_url
+          type: string
+          required: true
+      returns:
+        cardinality: "0..1"
+        shape: Event
+      ordering:
+        by: updated_at
+        direction: desc
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - events
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event.get_latest_by_source_url.duration_ms
+    links:
+      use_cases:
+        - UC-003
+        - NFR-002
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Event.Create
+    owner: team-paip
+    purpose: >
+      Creates a new canonical event from a validated claim when no duplicate
+      or updatable record exists.
+    source: sqlite.main
+    contract:
+      params:
+        - name: claim
+          type: EventClaim
+          required: true
+      returns:
+        cardinality: "1"
+        shape: Event
+      ordering: null
+      pagination: null
+      errors:
+        - validation_failed
+        - conflict
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - events
+    consistency:
+      transaction: required
+      idempotent: "false"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event.create.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-003
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Event.UpdateFromClaim
+    owner: team-paip
+    purpose: >
+      Updates an existing event from a new claim and reports whether business
+      fields changed to classify update vs duplicate.
+    source: sqlite.main
+    contract:
+      params:
+        - name: event_id
+          type: integer
+          required: true
+        - name: claim
+          type: EventClaim
+          required: true
+      returns:
+        cardinality: "1"
+        shape: EventWithChangedFlag
+      ordering: null
+      pagination: null
+      errors:
+        - not_found
+        - conflict
+        - sqlite_error
+    data_objects:
+      read:
+        - events
+      write:
+        - events
+    consistency:
+      transaction: required
+      idempotent: conditional
+      idempotency_notes: Reapplying identical claim keeps record unchanged.
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event.update_from_claim.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-003
+        - NFR-002
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Notification.Create
+    owner: team-paip
+    purpose: >
+      Persists notification delivery attempts and payloads for event-level
+      history, status tracking, and diagnostics.
+    source: sqlite.main
+    contract:
+      params:
+        - name: run_id
+          type: integer
+          required: true
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: event_id
+          type: integer
+          required: true
+        - name: channel
+          type: string
+          required: true
+        - name: payload
+          type: json
+          required: true
+        - name: status
+          type: string
+          required: true
+        - name: error
+          type: string|null
+          required: true
+        - name: reason
+          type: string
+          required: true
+      returns:
+        cardinality: "1"
+        shape: notification_id
+      ordering: null
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read: []
+      write:
+        - notifications
+    consistency:
+      transaction: required
+      idempotent: "false"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:pipeline
+    performance:
+      hot_path: true
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.notification.create.duration_ms
+    links:
+      use_cases:
+        - US-001
+        - UC-005
+        - NFR-001
+      call_sites:
+        - src/paip/pipeline.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Notification.GetHistoryByMonitor
+    owner: team-paip
+    purpose: >
+      Returns event-level history records for a monitor by joining notifications
+      with events, used by CLI history output.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: limit
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: HistoryRecord[]
+      ordering:
+        by: notifications.created_at
+        direction: desc
+      pagination:
+        strategy: offset
+        default_limit: 20
+        max_limit: 500
+        limit_param: limit
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - notifications
+        - events
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.notification.history.duration_ms
+        - db.notification.history.rows
+    links:
+      use_cases:
+        - US-001
+        - UC-005
+        - NFR-001
+      call_sites:
+        - src/paip/cli.py
+        - src/paip/db.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Run.ListByMonitor
+    owner: team-paip
+    purpose: >
+      Lists all run rows for a monitor for tests and local diagnostics.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: RunRow[]
+      ordering:
+        by: id
+        direction: asc
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - runs
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:test_and_debug
+    performance:
+      hot_path: false
+      allow_unbounded: true
+      allow_unbounded_reason: >
+        Test and diagnostics workflows consume complete run history for a monitor.
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.run.list_by_monitor.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/db.py
+        - tests/test_vertical_slice.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Notification.ListByMonitor
+    owner: team-paip
+    purpose: >
+      Lists all notification rows for a monitor for tests and diagnostics,
+      independent from history join formatting.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: NotificationRow[]
+      ordering:
+        by: id
+        direction: asc
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - notifications
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:test_and_debug
+    performance:
+      hot_path: false
+      allow_unbounded: true
+      allow_unbounded_reason: >
+        Test assertions and diagnostics rely on full monitor notification list.
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.notification.list_by_monitor.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/db.py
+        - tests/test_vertical_slice.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Event.ListByMonitor
+    owner: team-paip
+    purpose: >
+      Returns most recently updated events for a monitor with explicit limit,
+      used by tests and local debug commands.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: limit
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: Event[]
+      ordering:
+        by: updated_at
+        direction: desc
+      pagination:
+        strategy: offset
+        default_limit: 20
+        max_limit: 500
+        limit_param: limit
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - events
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:test_and_debug
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: recommended
+      sql_comment: disabled
+      metrics:
+        - db.event.list_by_monitor.duration_ms
+    links:
+      use_cases:
+        - UC-003
+        - NFR-006
+      call_sites:
+        - src/paip/db.py
+        - tests/test_vertical_slice.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Debug.GetTableRowCount
+    owner: team-paip
+    purpose: >
+      Reads row counts from runtime tables for operator diagnostics in
+      `python -m paip.debug`.
+    source: sqlite.main
+    contract:
+      params:
+        - name: table_name
+          type: string
+          required: true
+      returns:
+        cardinality: "1"
+        shape: row_count
+      ordering: null
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - runs
+        - source_hits
+        - event_claims
+        - events
+        - notifications
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:debug_cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: disabled
+      sql_comment: disabled
+      metrics:
+        - db.debug.table_row_count.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/debug.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Debug.ListRecentRunsByMonitor
+    owner: team-paip
+    purpose: >
+      Lists recent runs for a monitor with counters and status for debug output.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: limit
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: DebugRunRow[]
+      ordering:
+        by: id
+        direction: desc
+      pagination:
+        strategy: offset
+        default_limit: 10
+        max_limit: 500
+        limit_param: limit
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - runs
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:debug_cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: disabled
+      sql_comment: disabled
+      metrics:
+        - db.debug.list_recent_runs.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/debug.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Debug.ListRecentEventsByMonitor
+    owner: team-paip
+    purpose: >
+      Lists recently updated events for a monitor in debug diagnostics.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: limit
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: DebugEventRow[]
+      ordering:
+        by: updated_at
+        direction: desc
+      pagination:
+        strategy: offset
+        default_limit: 10
+        max_limit: 500
+        limit_param: limit
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - events
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:debug_cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: disabled
+      sql_comment: disabled
+      metrics:
+        - db.debug.list_recent_events.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/debug.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Debug.ListRecentNotificationsByMonitor
+    owner: team-paip
+    purpose: >
+      Lists recent notifications joined with event title for monitor diagnostics.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: limit
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: DebugNotificationRow[]
+      ordering:
+        by: notifications.id
+        direction: desc
+      pagination:
+        strategy: offset
+        default_limit: 10
+        max_limit: 500
+        limit_param: limit
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - notifications
+        - events
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:debug_cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: disabled
+      sql_comment: disabled
+      metrics:
+        - db.debug.list_recent_notifications.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/debug.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Debug.GetLatestNotificationRunByMonitor
+    owner: team-paip
+    purpose: >
+      Gets latest run_id that produced notifications for a monitor when explicit
+      run selection is not provided to debug preview.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..1"
+        shape: run_id
+      ordering:
+        by: notifications.id
+        direction: desc
+      pagination: null
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - notifications
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:debug_cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: disabled
+      sql_comment: disabled
+      metrics:
+        - db.debug.get_latest_notification_run.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/debug.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
+
+  - id: Debug.ListNotificationsByRun
+    owner: team-paip
+    purpose: >
+      Lists notifications for a monitor and run to render Telegram payload preview
+      with delivery status and errors.
+    source: sqlite.main
+    contract:
+      params:
+        - name: monitor_id
+          type: integer
+          required: true
+        - name: run_id
+          type: integer
+          required: true
+        - name: limit
+          type: integer
+          required: true
+      returns:
+        cardinality: "0..N"
+        shape: DebugNotificationPayloadRow[]
+      ordering:
+        by: notifications.id
+        direction: asc
+      pagination:
+        strategy: offset
+        default_limit: 10
+        max_limit: 500
+        limit_param: limit
+      errors:
+        - sqlite_error
+    data_objects:
+      read:
+        - notifications
+      write: []
+    consistency:
+      transaction: optional
+      idempotent: "true"
+    security:
+      pii: false
+      tenant_boundary: not_applicable
+      access: internal:debug_cli
+    performance:
+      hot_path: false
+    observability:
+      log_query_id: true
+      trace: disabled
+      sql_comment: disabled
+      metrics:
+        - db.debug.list_notifications_by_run.duration_ms
+    links:
+      use_cases:
+        - NFR-006
+      call_sites:
+        - src/paip/debug.py
+    lifecycle:
+      status: active
+      since: "2026-02-19"
