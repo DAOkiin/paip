@@ -1,0 +1,29 @@
+## Motivation
+Добавить устойчивый процесс хранения PR notes: markdown-реестр в репозитории + auto-sync notes через pre-push hook.
+
+## What changed
+- Добавлен guide: `docs/_meta/PR-NOTES.md`.
+- Добавлен markdown registry: `docs/_meta/pr-notes/index.md`.
+- Введён формат one-note-per-file: `docs/_meta/pr-notes/notes/<sha>.md`.
+- Добавлен sync/lint скрипт: `scripts/pr_notes_registry.py`.
+- Добавлен pre-push hook: `.githooks/pre-push` (auto-push `refs/notes/commits`, fail-on-error).
+- Добавлены just-команды для notes ops и hooks install.
+
+## How to run
+```bash
+just hooks-install
+just notes-list
+just notes-registry-refresh
+just notes-registry-lint
+```
+
+## Evidence
+- `just notes-registry-lint` -> OK
+- `just qc-validate` -> OK
+- `just test` -> 16 passed
+
+## Risks
+- Если remote не принимает push в `refs/notes/commits`, pre-push будет блокировать branch push.
+
+## Follow-ups
+- Для командной работы пушить notes ref вместе с веткой: `git push <remote> refs/notes/commits:refs/notes/commits`.
