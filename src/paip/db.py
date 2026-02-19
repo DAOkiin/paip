@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -24,10 +25,18 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, rela
 from .models import Event, EventClaim, HistoryRecord, MonitorSpec, SearchHit
 
 SCHEMA_VERSION = 2
+QUERY_LOGGER = logging.getLogger("paip.query")
 
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _log_query(query_id: str, **fields: Any) -> None:
+    parts = [f"query_id={query_id}"]
+    for key, value in fields.items():
+        parts.append(f"{key}={value!r}")
+    QUERY_LOGGER.info(" ".join(parts))
 
 
 class Base(DeclarativeBase):
@@ -160,6 +169,11 @@ class Store:
         self._ensure_schema()
 
     def _ensure_schema(self) -> None:
+        _log_query(
+            "Schema.EnsureVersion",
+            dialect=self.engine.dialect.name,
+            target_schema_version=SCHEMA_VERSION,
+        )
         if self.engine.dialect.name != "sqlite":
             Base.metadata.create_all(self.engine)
             return
@@ -184,6 +198,13 @@ class Store:
             Base.metadata.create_all(conn)
 
     def add_monitor(self, spec: MonitorSpec) -> MonitorSpec:
+        _log_query(
+            "Monitor.Create",
+            city=spec.city,
+            topic=spec.topic,
+            interval_min=spec.interval_min,
+            enabled=spec.enabled,
+        )
         row = MonitorRow(
             title=spec.title,
             city=spec.city,
@@ -208,10 +229,19 @@ class Store:
             enabled=row.enabled,
         )
 
-    def list_monitors(self, enabled_only: bool = False) -> list[MonitorSpec]:
+    def list_monitors(
+        self,
+        enabled_only: bool = False,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> list[MonitorSpec]:
+        limit = max(1, limit)
+        offset = max(0, offset)
+        _log_query("Monitor.List", enabled_only=enabled_only, limit=limit, offset=offset)
         stmt = select(MonitorRow).order_by(MonitorRow.id)
         if enabled_only:
             stmt = stmt.where(MonitorRow.enabled.is_(True))
+        stmt = stmt.limit(limit).offset(offset)
         with Session(self.engine) as session:
             rows = session.scalars(stmt).all()
         return [
@@ -229,6 +259,7 @@ class Store:
         ]
 
     def get_monitor(self, monitor_id: int) -> MonitorSpec | None:
+        _log_query("Monitor.GetById", monitor_id=monitor_id)
         with Session(self.engine) as session:
             row = session.get(MonitorRow, monitor_id)
             if row is None:
@@ -245,6 +276,7 @@ class Store:
             )
 
     def start_run(self, monitor_id: int, trigger: str) -> int:
+        _log_query("Run.Start", monitor_id=monitor_id, trigger=trigger)
         row = RunRow(monitor_id=monitor_id, trigger=trigger, status="running")
         with Session(self.engine) as session:
             session.add(row)
@@ -265,6 +297,18 @@ class Store:
         unsupported_sources: int,
         error: str | None,
     ) -> None:
+        _log_query(
+            "Run.Finish",
+            run_id=run_id,
+            status=status,
+            fetched_sources=fetched_sources,
+            claims_extracted=claims_extracted,
+            new_events=new_events,
+            updated_events=updated_events,
+            duplicates=duplicates,
+            unsupported_sources=unsupported_sources,
+            error=error,
+        )
         with Session(self.engine) as session:
             row = session.get(RunRow, run_id)
             if row is None:
@@ -287,6 +331,13 @@ class Store:
         hit: SearchHit,
         payload: dict[str, Any],
     ) -> int:
+        _log_query(
+            "SourceHit.Create",
+            run_id=run_id,
+            monitor_id=monitor_id,
+            source=hit.source,
+            url=hit.url,
+        )
         row = SourceHitRow(
             run_id=run_id,
             monitor_id=monitor_id,
@@ -304,6 +355,13 @@ class Store:
             return row.id
 
     def add_event_claim(self, claim: EventClaim, *, validation_status: str = "valid") -> int:
+        _log_query(
+            "EventClaim.Create",
+            run_id=claim.run_id,
+            monitor_id=claim.monitor_id,
+            source_url=claim.source_url,
+            validation_status=validation_status,
+        )
         row = EventClaimRow(
             run_id=claim.run_id,
             monitor_id=claim.monitor_id,
@@ -336,6 +394,13 @@ class Store:
         payload: dict[str, Any],
         error: str,
     ) -> int:
+        _log_query(
+            "EventClaim.CreateInvalid",
+            run_id=run_id,
+            monitor_id=monitor_id,
+            source_hit_id=source_hit_id,
+            error=error,
+        )
         row = EventClaimRow(
             run_id=run_id,
             monitor_id=monitor_id,
@@ -363,6 +428,7 @@ class Store:
             return row.id
 
     def get_event_by_key(self, monitor_id: int, event_key: str) -> Event | None:
+        _log_query("Event.GetByKey", monitor_id=monitor_id, event_key=event_key)
         stmt = (
             select(EventRow)
             .where(EventRow.monitor_id == monitor_id)
@@ -376,6 +442,11 @@ class Store:
         return _row_to_event(row)
 
     def get_event_by_source_url(self, monitor_id: int, source_url: str) -> Event | None:
+        _log_query(
+            "Event.GetLatestBySourceUrl",
+            monitor_id=monitor_id,
+            source_url=source_url,
+        )
         stmt = (
             select(EventRow)
             .where(EventRow.monitor_id == monitor_id)
@@ -392,6 +463,12 @@ class Store:
     def create_event(self, claim: EventClaim) -> Event:
         if claim.start_date is None:
             raise ValueError("Claim start_date is required to create event")
+        _log_query(
+            "Event.Create",
+            monitor_id=claim.monitor_id,
+            event_key=claim.event_key,
+            source_url=claim.source_url,
+        )
         row = EventRow(
             monitor_id=claim.monitor_id,
             event_key=claim.event_key,
@@ -412,6 +489,12 @@ class Store:
             return _row_to_event(row)
 
     def update_event_from_claim(self, event_id: int, claim: EventClaim) -> tuple[Event, bool]:
+        _log_query(
+            "Event.UpdateFromClaim",
+            event_id=event_id,
+            monitor_id=claim.monitor_id,
+            event_key=claim.event_key,
+        )
         with Session(self.engine) as session:
             row = session.get(EventRow, event_id)
             if row is None:
@@ -452,6 +535,14 @@ class Store:
         error: str | None,
         reason: str,
     ) -> int:
+        _log_query(
+            "Notification.Create",
+            run_id=run_id,
+            monitor_id=monitor_id,
+            event_id=event_id,
+            status=status,
+            reason=reason,
+        )
         row = NotificationRow(
             run_id=run_id,
             monitor_id=monitor_id,
@@ -469,6 +560,12 @@ class Store:
             return row.id
 
     def get_history(self, monitor_id: int, limit: int) -> list[HistoryRecord]:
+        limit = max(1, limit)
+        _log_query(
+            "Notification.GetHistoryByMonitor",
+            monitor_id=monitor_id,
+            limit=limit,
+        )
         stmt = (
             select(NotificationRow, EventRow)
             .join(EventRow, NotificationRow.event_id == EventRow.id)
@@ -495,21 +592,42 @@ class Store:
             for n, e in rows
         ]
 
-    def list_runs(self, monitor_id: int) -> list[RunRow]:
-        stmt = select(RunRow).where(RunRow.monitor_id == monitor_id).order_by(RunRow.id)
+    def list_runs(self, monitor_id: int, limit: int = 200, offset: int = 0) -> list[RunRow]:
+        limit = max(1, limit)
+        offset = max(0, offset)
+        _log_query("Run.ListByMonitor", monitor_id=monitor_id, limit=limit, offset=offset)
+        stmt = (
+            select(RunRow)
+            .where(RunRow.monitor_id == monitor_id)
+            .order_by(RunRow.id)
+            .limit(limit)
+            .offset(offset)
+        )
         with Session(self.engine) as session:
             return session.scalars(stmt).all()
 
-    def list_notifications(self, monitor_id: int) -> list[NotificationRow]:
+    def list_notifications(
+        self,
+        monitor_id: int,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> list[NotificationRow]:
+        limit = max(1, limit)
+        offset = max(0, offset)
+        _log_query("Notification.ListByMonitor", monitor_id=monitor_id, limit=limit, offset=offset)
         stmt = (
             select(NotificationRow)
             .where(NotificationRow.monitor_id == monitor_id)
             .order_by(NotificationRow.id)
+            .limit(limit)
+            .offset(offset)
         )
         with Session(self.engine) as session:
             return session.scalars(stmt).all()
 
     def list_events(self, monitor_id: int, limit: int = 20) -> list[Event]:
+        limit = max(1, limit)
+        _log_query("Event.ListByMonitor", monitor_id=monitor_id, limit=limit)
         stmt = (
             select(EventRow)
             .where(EventRow.monitor_id == monitor_id)

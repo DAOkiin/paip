@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sqlite3
 from pathlib import Path
 
 from .config import Settings
 from .db import Store
+
+QUERY_LOGGER = logging.getLogger("paip.query")
+
+
+def _log_query(query_id: str, **fields: object) -> None:
+    parts = [f"query_id={query_id}"]
+    for key, value in fields.items():
+        parts.append(f"{key}={value!r}")
+    QUERY_LOGGER.info(" ".join(parts))
 
 
 def main() -> None:
@@ -18,6 +28,10 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = Settings.from_env()
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
     # Keep debug commands aligned with runtime schema version.
     Store(settings.db_url)
     db_path = Path(settings.db_path)
@@ -32,10 +46,12 @@ def main() -> None:
 
     print("\ncounts:")
     for table in ("runs", "source_hits", "event_claims", "events", "notifications"):
+        _log_query("Debug.GetTableRowCount", table_name=table)
         cnt = cur.execute(f"select count(*) from {table}").fetchone()[0]
         print(f"  {table}: {cnt}")
 
     print(f"\nlast runs for monitor_id={args.monitor_id}:")
+    _log_query("Debug.ListRecentRunsByMonitor", monitor_id=args.monitor_id, limit=args.limit)
     runs = cur.execute(
         """
         select
@@ -70,6 +86,7 @@ def main() -> None:
             )
 
     print(f"\nlast events for monitor_id={args.monitor_id}:")
+    _log_query("Debug.ListRecentEventsByMonitor", monitor_id=args.monitor_id, limit=args.limit)
     events = cur.execute(
         """
         select id, title, city, venue, start_date, source_name, source_url, updated_at
@@ -91,6 +108,7 @@ def main() -> None:
             )
 
     print(f"\nlast notifications for monitor_id={args.monitor_id}:")
+    _log_query("Debug.ListRecentNotificationsByMonitor", monitor_id=args.monitor_id, limit=args.limit)
     notifications = cur.execute(
         """
         select n.id, n.run_id, n.status, n.reason, n.error, n.created_at, e.title as event_title
@@ -127,6 +145,7 @@ def _print_telegram_preview(
 ) -> None:
     print("\ntelegram preview:")
     if run_id is None:
+        _log_query("Debug.GetLatestNotificationRunByMonitor", monitor_id=monitor_id)
         run_row = cur.execute(
             """
             select run_id
@@ -142,6 +161,12 @@ def _print_telegram_preview(
             return
         run_id = int(run_row["run_id"])
 
+    _log_query(
+        "Debug.ListNotificationsByRun",
+        monitor_id=monitor_id,
+        run_id=run_id,
+        limit=limit,
+    )
     rows = cur.execute(
         """
         select id, run_id, status, error, payload
