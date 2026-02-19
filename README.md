@@ -68,6 +68,7 @@ paip history --monitor-id 1 --limit 20
 
 ```bash
 just test
+just readme-links-check
 ```
 
 ## Документация

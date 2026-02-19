@@ -44,6 +44,9 @@ notes-registry-refresh:
 notes-registry-lint:
   {{venv_python}} scripts/pr_notes_registry.py lint --output-dir docs/_meta/pr-notes --notes-ref refs/notes/commits
 
+readme-links-check FILE='README.md':
+  {{venv_python}} scripts/check_readme_links.py --root . --file "{{FILE}}"
+
 monitor-add TITLE CITY TOPIC QUERY INTERVAL_MIN CHAT_ID:
   {{venv_paip}} monitor add --title "{{TITLE}}" --city "{{CITY}}" --topic "{{TOPIC}}" --query "{{QUERY}}" --interval-min "{{INTERVAL_MIN}}" --chat-id "{{CHAT_ID}}"
 
