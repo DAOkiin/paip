@@ -1,26 +1,20 @@
 # PAIP
 
-Коротко: система мониторинга/агрегации изменений из источников с дедупликацией, историей и уведомлениями.
+Event-centric monitoring MVP: поиск источников через SearXNG, извлечение event-claims, дедуп/резолв в уникальные события, уведомления в Telegram и история причин.
 
 ## US-001 vertical slice (текущий этап)
 
-Реализован путь: `SearXNG -> normalize -> exact dedup -> history -> Telegram`.
+Рабочий путь:
 
-## Быстрый старт (dev)
+`SearXNG discovery -> extractor (Eventbrite-style) -> EventClaim validation -> Event dedup/resolution -> Telegram -> history`
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-```
-
-Альтернатива через `just`:
+## Быстрый старт
 
 ```bash
 just setup
 ```
 
-Env:
+Переменные окружения:
 
 ```bash
 export SEARXNG_BASE_URL="https://your-searxng.example"
@@ -31,26 +25,27 @@ export PAIP_LOG_LEVEL="INFO"
 export SEARXNG_API_KEY=""
 ```
 
-Переменные берутся из shell; если рядом есть `.env`, `just` также подгрузит его автоматически (`set dotenv-load := true`).
+`just` берёт значения из shell и автоматически подгружает `.env`, если файл существует.
 
 ## Justfile workflow
 
-Список доступных recipes:
+Показать доступные команды:
 
 ```bash
 just
 ```
 
-Ключевые команды:
+Основные команды:
 
 ```bash
 just test
-just monitor-add "Bangkok events" "Bangkok" "tech" "events" 30 "<telegram-chat-id>"
+just monitor-add "Bangkok events" "Bangkok" "tech" "eventbrite bangkok tech events" 30 "<telegram-chat-id>"
 just monitor-list
 just run-once 1
 just history 1 20
 just logs 1 20
 just stats 1 10
+just telegram-preview 1 10
 ```
 
 Подсказка по env:
@@ -59,54 +54,27 @@ just stats 1 10
 just env-example
 ```
 
-Создать монитор:
+## CLI (v0)
 
 ```bash
-paip monitor add \
-  --title "Bangkok events" \
-  --city "Bangkok" \
-  --topic "tech" \
-  --query "events" \
-  --interval-min 30 \
-  --chat-id "<telegram-chat-id>"
-```
-
-Список мониторов:
-
-```bash
+paip monitor add --title "Bangkok events" --city "Bangkok" --topic "tech" --query "eventbrite bangkok tech events" --interval-min 30 --chat-id "<telegram-chat-id>"
 paip monitor list
-```
-
-Ручной запуск:
-
-```bash
 paip run once --monitor-id 1
-```
-
-Плановые запуски:
-
-```bash
 paip run scheduler
-```
-
-История уведомлений:
-
-```bash
 paip history --monitor-id 1 --limit 20
 ```
 
 ## Проверки
 
 ```bash
-pytest
+just test
 ```
 
-## Документация (источник истины)
+## Документация
 
-- SDLC: `SDLC.md` (подробно: `docs/_meta/sdlc.md`)
-- Vision: `docs/product/global_vision.md`
-- User Stories: `docs/product/global_user_stories.md`
-- Use Cases: `docs/product/global_use_cases.md`
-- NFR: `docs/product/nfr.md`
-- Current iteration: `docs/iterations/2026-02-mvp/`
-- ADR: `docs/adr/`
+- `/Users/daokiin/projects/daokiin/paip/SDLC.md`
+- `/Users/daokiin/projects/daokiin/paip/docs/product/global_vision.md`
+- `/Users/daokiin/projects/daokiin/paip/docs/product/global_user_stories.md`
+- `/Users/daokiin/projects/daokiin/paip/docs/product/global_use_cases.md`
+- `/Users/daokiin/projects/daokiin/paip/docs/product/nfr.md`
+- `/Users/daokiin/projects/daokiin/paip/docs/iterations/2026-02-mvp/`

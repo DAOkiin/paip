@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "paip"
 version = "0.1.0"
-description = "PAIP US-001 vertical slice (SearXNG -> dedup -> Telegram)"
+description = "PAIP US-001 event slice (SearXNG -> extraction -> event dedup -> Telegram)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

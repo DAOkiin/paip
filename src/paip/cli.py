@@ -68,8 +68,9 @@ def main() -> None:
             return
         for row in history:
             print(
-                f"[{row.created_at.isoformat()}] status={row.status} source={row.source} "
-                f"title={row.title!r} reason={row.reason!r} url={row.canonical_url}"
+                f"[{row.created_at.isoformat()}] status={row.status} reason={row.reason} "
+                f"title={row.title!r} city={row.city!r} venue={row.venue!r} "
+                f"date={row.start_date.isoformat()} source={row.source_name} url={row.source_url}"
                 + (f" error={row.error!r}" if row.error else "")
             )
         return

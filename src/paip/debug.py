@@ -6,6 +6,7 @@ import sqlite3
 from pathlib import Path
 
 from .config import Settings
+from .db import Store
 
 
 def main() -> None:
@@ -17,6 +18,8 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = Settings.from_env()
+    # Keep debug commands aligned with runtime schema version.
+    Store(settings.db_url)
     db_path = Path(settings.db_path)
     print(f"DB: {db_path}")
     if not db_path.exists():
@@ -28,14 +31,26 @@ def main() -> None:
     cur = con.cursor()
 
     print("\ncounts:")
-    for table in ("runs", "raw_hits", "canonical_items", "notifications"):
+    for table in ("runs", "source_hits", "event_claims", "events", "notifications"):
         cnt = cur.execute(f"select count(*) from {table}").fetchone()[0]
         print(f"  {table}: {cnt}")
 
     print(f"\nlast runs for monitor_id={args.monitor_id}:")
     runs = cur.execute(
         """
-        select id, trigger, started_at, finished_at, status, fetched, new_items, duplicates, error
+        select
+          id,
+          trigger,
+          started_at,
+          finished_at,
+          status,
+          fetched_sources,
+          claims_extracted,
+          new_events,
+          updated_events,
+          duplicates,
+          unsupported_sources,
+          error
         from runs
         where monitor_id = ?
         order by id desc
@@ -49,17 +64,40 @@ def main() -> None:
         for row in runs:
             data = dict(row)
             print(
-                "  run_id={id} trigger={trigger} status={status} fetched={fetched} new={new_items} "
-                "dup={duplicates} started={started_at} error={error}".format(**data)
+                "  run_id={id} trigger={trigger} status={status} fetched={fetched_sources} "
+                "claims={claims_extracted} new={new_events} upd={updated_events} dup={duplicates} "
+                "unsupported={unsupported_sources} started={started_at} error={error}".format(**data)
+            )
+
+    print(f"\nlast events for monitor_id={args.monitor_id}:")
+    events = cur.execute(
+        """
+        select id, title, city, venue, start_date, source_name, source_url, updated_at
+        from events
+        where monitor_id = ?
+        order by updated_at desc
+        limit ?
+        """,
+        (args.monitor_id, args.limit),
+    ).fetchall()
+    if not events:
+        print("  no events")
+    else:
+        for row in events:
+            data = dict(row)
+            print(
+                "  event_id={id} date={start_date} title={title} city={city} venue={venue} "
+                "source={source_name} url={source_url} updated={updated_at}".format(**data)
             )
 
     print(f"\nlast notifications for monitor_id={args.monitor_id}:")
     notifications = cur.execute(
         """
-        select id, run_id, status, reason, error, created_at
-        from notifications
-        where monitor_id = ?
-        order by id desc
+        select n.id, n.run_id, n.status, n.reason, n.error, n.created_at, e.title as event_title
+        from notifications n
+        join events e on e.id = n.event_id
+        where n.monitor_id = ?
+        order by n.id desc
         limit ?
         """,
         (args.monitor_id, args.limit),
@@ -70,8 +108,8 @@ def main() -> None:
         for row in notifications:
             data = dict(row)
             print(
-                "  notif_id={id} run_id={run_id} status={status} created={created_at} "
-                "reason={reason} error={error}".format(**data)
+                "  notif_id={id} run_id={run_id} status={status} reason={reason} title={event_title} "
+                "created={created_at} error={error}".format(**data)
             )
 
     if args.telegram_preview:

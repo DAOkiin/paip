@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import re
+from datetime import date
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
@@ -24,6 +26,24 @@ def canonicalize_url(url: str) -> str:
         )
     )
     return normalized
+
+
+def normalize_text(value: str) -> str:
+    lowered = value.casefold().strip()
+    compact = re.sub(r"[^\w\s]", " ", lowered)
+    return re.sub(r"\s+", " ", compact).strip()
+
+
+def build_event_key(*, title: str, city: str, venue: str, start_date: date) -> str:
+    normalized = "|".join(
+        [
+            normalize_text(title),
+            normalize_text(city),
+            normalize_text(venue),
+            start_date.isoformat(),
+        ]
+    )
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def dedup_key(canonical_url: str) -> str:
