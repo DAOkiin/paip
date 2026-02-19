@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Iterator
 from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -9,11 +10,13 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from .config import Settings
 from .db import Store
+from .models import MonitorSpec
 from .notifier import TelegramNotifier
 from .pipeline import run_monitor
 from .searx_client import SearxClient
 
 LOGGER = logging.getLogger(__name__)
+MONITOR_PAGE_SIZE = 200
 
 
 def run_scheduler(
@@ -44,8 +47,7 @@ def run_scheduler_once_for_tests(
     notifier: TelegramNotifier | None = None,
 ) -> None:
     scheduler = BackgroundScheduler(timezone="UTC")
-    monitors = store.list_monitors(enabled_only=True)
-    for monitor in monitors:
+    for monitor in _iter_enabled_monitors(store, page_size=MONITOR_PAGE_SIZE):
         scheduler.add_job(
             run_monitor,
             trigger="date",
@@ -74,8 +76,7 @@ def _register_interval_jobs(
     searx_client: SearxClient | None = None,
     notifier: TelegramNotifier | None = None,
 ) -> None:
-    monitors = store.list_monitors(enabled_only=True)
-    for monitor in monitors:
+    for monitor in _iter_enabled_monitors(store, page_size=MONITOR_PAGE_SIZE):
         scheduler.add_job(
             run_monitor,
             trigger="interval",
@@ -93,3 +94,16 @@ def _register_interval_jobs(
             coalesce=True,
             max_instances=1,
         )
+
+
+def _iter_enabled_monitors(store: Store, *, page_size: int) -> Iterator[MonitorSpec]:
+    offset = 0
+    while True:
+        batch = store.list_monitors(enabled_only=True, limit=page_size, offset=offset)
+        if not batch:
+            return
+        for monitor in batch:
+            yield monitor
+        if len(batch) < page_size:
+            return
+        offset += page_size

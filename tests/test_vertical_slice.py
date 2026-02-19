@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timezone
 
 from paip.config import Settings
@@ -208,6 +209,107 @@ def test_add_and_list_monitor(tmp_path):
     assert len(monitors) == 1
     assert monitors[0].id == created.id
     assert monitors[0].city == "Bangkok"
+
+
+def test_list_monitors_supports_pagination(tmp_path):
+    store, _ = _make_store_and_settings(tmp_path)
+    created = [_add_monitor(store) for _ in range(5)]
+    expected_ids = [monitor.id for monitor in created if monitor.id is not None]
+
+    page1 = store.list_monitors(limit=2, offset=0)
+    page2 = store.list_monitors(limit=2, offset=2)
+    page3 = store.list_monitors(limit=2, offset=4)
+
+    assert [m.id for m in page1] == expected_ids[:2]
+    assert [m.id for m in page2] == expected_ids[2:4]
+    assert [m.id for m in page3] == expected_ids[4:5]
+
+
+def test_list_runs_and_notifications_support_pagination(tmp_path):
+    store, _ = _make_store_and_settings(tmp_path)
+    monitor = _add_monitor(store)
+    monitor_id = monitor.id or 0
+
+    seed_run = store.start_run(monitor_id, "manual")
+    start_date = date(2026, 3, 1)
+    claim = EventClaim.model_validate(
+        {
+            "run_id": seed_run,
+            "monitor_id": monitor_id,
+            "source_hit_id": None,
+            "source_url": "https://events.local/pagination-seed",
+            "source_name": "events.local",
+            "title": "Pagination Event",
+            "city": "Bangkok",
+            "venue": "Venue",
+            "start_date": start_date,
+            "extracted_at": datetime.now(timezone.utc),
+            "confidence": 0.9,
+            "raw_payload": {},
+            "event_key": build_event_key(
+                title="Pagination Event",
+                city="Bangkok",
+                venue="Venue",
+                start_date=start_date,
+            ),
+        }
+    )
+    event = store.create_event(claim)
+    event_id = event.id or 0
+
+    for idx in range(5):
+        run_id = store.start_run(monitor_id, "manual")
+        store.add_notification(
+            run_id=run_id,
+            monitor_id=monitor_id,
+            event_id=event_id,
+            channel="telegram",
+            payload={"idx": idx},
+            status="sent",
+            error=None,
+            reason="new_event",
+        )
+
+    all_runs = store.list_runs(monitor_id, limit=20, offset=0)
+    all_notifications = store.list_notifications(monitor_id, limit=20, offset=0)
+
+    runs_page1 = store.list_runs(monitor_id, limit=2, offset=0)
+    runs_page2 = store.list_runs(monitor_id, limit=2, offset=2)
+    notifications_page1 = store.list_notifications(monitor_id, limit=2, offset=0)
+    notifications_page2 = store.list_notifications(monitor_id, limit=2, offset=2)
+
+    assert [row.id for row in runs_page1] == [row.id for row in all_runs[:2]]
+    assert [row.id for row in runs_page2] == [row.id for row in all_runs[2:4]]
+    assert [row.id for row in notifications_page1] == [row.id for row in all_notifications[:2]]
+    assert [row.id for row in notifications_page2] == [row.id for row in all_notifications[2:4]]
+
+
+def test_query_id_logs_are_emitted_for_store_operations(caplog, tmp_path):
+    caplog.set_level(logging.INFO, logger="paip.query")
+    store, _ = _make_store_and_settings(tmp_path)
+    monitor = _add_monitor(store)
+    monitor_id = monitor.id or 0
+
+    store.list_monitors(limit=10, offset=0)
+    run_id = store.start_run(monitor_id, "manual")
+    store.list_runs(monitor_id, limit=10, offset=0)
+    store.finish_run(
+        run_id,
+        status="completed",
+        fetched_sources=0,
+        claims_extracted=0,
+        new_events=0,
+        updated_events=0,
+        duplicates=0,
+        unsupported_sources=0,
+        error=None,
+    )
+
+    assert "query_id=Monitor.Create" in caplog.text
+    assert "query_id=Monitor.List" in caplog.text
+    assert "query_id=Run.Start" in caplog.text
+    assert "query_id=Run.ListByMonitor" in caplog.text
+    assert "query_id=Run.Finish" in caplog.text
 
 
 def test_pipeline_unsupported_source_does_not_fail(tmp_path):

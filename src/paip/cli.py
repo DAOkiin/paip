@@ -37,7 +37,7 @@ def main() -> None:
             return
 
         if args.monitor_command == "list":
-            monitors = store.list_monitors()
+            monitors = store.list_monitors(limit=args.limit, offset=args.offset)
             if not monitors:
                 print("No monitors")
                 return
@@ -93,7 +93,9 @@ def _build_parser() -> argparse.ArgumentParser:
     monitor_add.add_argument("--interval-min", type=int, required=True)
     monitor_add.add_argument("--chat-id", required=True)
 
-    monitor_sub.add_parser("list")
+    monitor_list = monitor_sub.add_parser("list")
+    monitor_list.add_argument("--limit", type=int, default=200)
+    monitor_list.add_argument("--offset", type=int, default=0)
 
     run_parser = subparsers.add_parser("run")
     run_sub = run_parser.add_subparsers(dest="run_command", required=True)

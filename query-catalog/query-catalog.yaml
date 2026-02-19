@@ -137,14 +137,24 @@ queries:
       params:
         - name: enabled_only
           type: boolean
-          required: true
+          required: false
+        - name: limit
+          type: integer
+          required: false
+        - name: offset
+          type: integer
+          required: false
       returns:
         cardinality: "0..N"
         shape: MonitorSpec[]
       ordering:
         by: id
         direction: asc
-      pagination: null
+      pagination:
+        strategy: offset
+        default_limit: 200
+        max_limit: 1000
+        limit_param: limit
       errors:
         - sqlite_error
     data_objects:
@@ -160,10 +170,6 @@ queries:
       access: internal:cli_and_scheduler
     performance:
       hot_path: false
-      allow_unbounded: true
-      allow_unbounded_reason: >
-        Current monitor volume is expected to stay small in MVP and full list is
-        required for scheduler job registration.
     observability:
       log_query_id: true
       trace: recommended
@@ -249,7 +255,11 @@ queries:
         cardinality: "1"
         shape: run_id
       ordering: null
-      pagination: null
+      pagination:
+        strategy: offset
+        default_limit: 200
+        max_limit: 1000
+        limit_param: limit
       errors:
         - sqlite_error
     data_objects:
@@ -894,13 +904,23 @@ queries:
         - name: monitor_id
           type: integer
           required: true
+        - name: limit
+          type: integer
+          required: false
+        - name: offset
+          type: integer
+          required: false
       returns:
         cardinality: "0..N"
         shape: RunRow[]
       ordering:
         by: id
         direction: asc
-      pagination: null
+      pagination:
+        strategy: offset
+        default_limit: 200
+        max_limit: 1000
+        limit_param: limit
       errors:
         - sqlite_error
     data_objects:
@@ -916,9 +936,6 @@ queries:
       access: internal:test_and_debug
     performance:
       hot_path: false
-      allow_unbounded: true
-      allow_unbounded_reason: >
-        Test and diagnostics workflows consume complete run history for a monitor.
     observability:
       log_query_id: true
       trace: recommended
@@ -946,13 +963,23 @@ queries:
         - name: monitor_id
           type: integer
           required: true
+        - name: limit
+          type: integer
+          required: false
+        - name: offset
+          type: integer
+          required: false
       returns:
         cardinality: "0..N"
         shape: NotificationRow[]
       ordering:
         by: id
         direction: asc
-      pagination: null
+      pagination:
+        strategy: offset
+        default_limit: 200
+        max_limit: 1000
+        limit_param: limit
       errors:
         - sqlite_error
     data_objects:
@@ -968,9 +995,6 @@ queries:
       access: internal:test_and_debug
     performance:
       hot_path: false
-      allow_unbounded: true
-      allow_unbounded_reason: >
-        Test assertions and diagnostics rely on full monitor notification list.
     observability:
       log_query_id: true
       trace: recommended
